@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	// "io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -12,28 +11,23 @@ import (
 	// "tokenbucket" limit requests to 1,000 requests per hour
 )
 
-/*
-	SEARCH
-	* list of up to 20 nutrients per food
-	* Nutrients have weight and stuff
-
-	FOOD REPORT(v2)
-		v2:
-			* list of food nutrients or food groups
-			* good for paged browse
-			* Can get report for multiple foods (up to 50)
-*/
 var Config struct {
 	API_KEY  string
 	TIME_OUT int
 }
 
 func SearchFood(query string) *FoodSearch {
-	return formatSearchResponse(doRequest(buildSearchRequest(query)))
+	response := doRequest(buildSearchRequest(query))
+	search := new(FoodSearch)
+	formatSearchResponse(response, search)
+	return search
 }
 
-func GetFoodReport(query string) {
-	formatReportResponse(doRequest(buildReportRequest(query)))
+func GetFoodReport(query string) *FoodReport {
+	response := doRequest(buildSearchRequest(query))
+	report := new(FoodReport)
+	formatSearchResponse(response, report)
+	return report
 }
 
 func buildReportRequest(query string) *http.Request {
@@ -64,9 +58,7 @@ func buildSearchRequest(query string) *http.Request { // Multiple requests
 }
 
 func doRequest(req *http.Request) *http.Response {
-	client := &http.Client{
-		Timeout: time.Second * time.Duration(Config.TIME_OUT),
-	}
+	client := &http.Client{Timeout: time.Second * time.Duration(Config.TIME_OUT)}
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Fatal("Do: ", err)
@@ -74,22 +66,11 @@ func doRequest(req *http.Request) *http.Response {
 	return resp
 }
 
-func formatSearchResponse(resp *http.Response) *FoodSearch {
+func formatSearchResponse(resp *http.Response, record interface{}) {
 	defer resp.Body.Close()
-	record := new(FoodSearch)
 	if err := json.NewDecoder(resp.Body).Decode(record); err != nil {
 		panic(err)
 	}
-	return record
-}
-
-func formatReportResponse(resp *http.Response) *FoodReport { // Multiple formatted responses
-	defer resp.Body.Close()
-	record := new(FoodReport)
-	if err := json.NewDecoder(resp.Body).Decode(&record); err != nil {
-		log.Println(err)
-	}
-	return record
 }
 
 func initConfig(configFilename string) {
@@ -109,5 +90,4 @@ func main() {
 	initConfig("./config.json")
 	search := SearchFood("butter")
 	fmt.Println(search)
-
 }
