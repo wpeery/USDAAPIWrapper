@@ -1,4 +1,4 @@
-package main
+package USDAAPIWrapper
 
 import (
 	"encoding/json"
@@ -16,40 +16,38 @@ var Config struct {
 	TIME_OUT int
 }
 
-func SearchFood(query string) *FoodSearch {
-	response := doRequest(buildSearchRequest(query))
+func SearchFood(query, dataSource,
+	foodGroupID, sort, max, offset string) *FoodSearch {
+	response := doRequest(buildSearchRequest(query, dataSource,
+		foodGroupID, sort, max, offset))
 	search := new(FoodSearch)
 	formatSearchResponse(response, search)
 	return search
 }
 
-func GetFoodReport(query string) *FoodReport {
-	response := doRequest(buildReportRequest(query))
+func GetFoodReport(query, reportType string) *FoodReport {
+	response := doRequest(buildReportRequest(query, reportType))
 	report := new(FoodReport)
 	formatSearchResponse(response, report)
 	return report
 }
 
-func buildReportRequest(query string) *http.Request {
-	safeQuery := url.QueryEscape(query)
-	url := "https://api.nal.usda.gov/ndb/V2/reports?ndbno=" +
-		safeQuery +
-		"&type=f&format=json&api_key=" +
-		Config.API_KEY
-	fmt.Println(url)
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		log.Fatal("NewRequest: ", err)
-	}
-	return req
+func buildReportRequest(ndbno, reportType string) *http.Request {
+	url := fmt.Sprintf("https://api.nal.usda.gov/ndb/V2/reports?ndbno=%s&type=%s&format=json&api_key=%s",
+		ndbno, reportType, Config.API_KEY)
+	return buildRequest(url)
 }
 
-func buildSearchRequest(query string) *http.Request { // Multiple requests
+func buildSearchRequest(query, dataSource,
+	foodGroupID, sort, max, offset string) *http.Request {
 	safeQuery := url.QueryEscape(query)
-	url := "http://api.nal.usda.gov/ndb/search/?format=json&q=" +
-		safeQuery +
-		"&sort=r&max=25&offset=0&api_key=" +
-		Config.API_KEY
+	url := fmt.Sprintf("http://api.nal.usda.gov/ndb/search/?format=json&q=%s&ds=%s&fg=%s&sort=%s&max=%s&offset=%s&api_key=%s",
+		safeQuery, dataSource, foodGroupID, sort, max, offset, Config.API_KEY)
+	fmt.Println(url)
+	return buildRequest(url)
+}
+
+func buildRequest(url string) *http.Request {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		log.Fatal("NewRequest: ", err)
@@ -86,8 +84,6 @@ func initConfig(configFilename string) {
 	file.Close()
 }
 
-func main() {
+func init() {
 	initConfig("./config.json")
-	report := GetFoodReport("01009")
-	fmt.Println(report.API)
 }

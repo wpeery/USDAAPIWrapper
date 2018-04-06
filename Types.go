@@ -1,4 +1,4 @@
-package main
+package USDAAPIWrapper
 
 // Food Search Types
 
