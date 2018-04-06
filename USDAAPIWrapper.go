@@ -24,7 +24,7 @@ func SearchFood(query string) *FoodSearch {
 }
 
 func GetFoodReport(query string) *FoodReport {
-	response := doRequest(buildSearchRequest(query))
+	response := doRequest(buildReportRequest(query))
 	report := new(FoodReport)
 	formatSearchResponse(response, report)
 	return report
@@ -32,12 +32,12 @@ func GetFoodReport(query string) *FoodReport {
 
 func buildReportRequest(query string) *http.Request {
 	safeQuery := url.QueryEscape(query)
-	url := "https://api.nal.usda.gov/ndb/V2/reports?ndbn0=" +
+	url := "https://api.nal.usda.gov/ndb/V2/reports?ndbno=" +
 		safeQuery +
 		"&type=f&format=json&api_key=" +
 		Config.API_KEY
+	fmt.Println(url)
 	req, err := http.NewRequest("GET", url, nil)
-	fmt.Println("req: ", req)
 	if err != nil {
 		log.Fatal("NewRequest: ", err)
 	}
@@ -88,6 +88,6 @@ func initConfig(configFilename string) {
 
 func main() {
 	initConfig("./config.json")
-	search := SearchFood("butter")
-	fmt.Println(search)
+	report := GetFoodReport("01009")
+	fmt.Println(report.API)
 }
