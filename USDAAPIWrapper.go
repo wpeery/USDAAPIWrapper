@@ -8,12 +8,17 @@ import (
 	"net/url"
 	"os"
 	"time"
-	// "tokenbucket" limit requests to 1,000 requests per hour
+	"tokenbucket"
 )
 
+type RateLimiter interface {
+	Consume(int)
+}
+
 var Config struct {
-	API_KEY  string
-	TIME_OUT int
+	API_KEY          string
+	CLIENT_TIME_OUT  int
+	API_RATE_LIMITER RateLimiter
 }
 
 func SearchFood(query, dataSource,
@@ -43,7 +48,6 @@ func buildSearchRequest(query, dataSource,
 	safeQuery := url.QueryEscape(query)
 	url := fmt.Sprintf("http://api.nal.usda.gov/ndb/search/?format=json&q=%s&ds=%s&fg=%s&sort=%s&max=%s&offset=%s&api_key=%s",
 		safeQuery, dataSource, foodGroupID, sort, max, offset, Config.API_KEY)
-	fmt.Println(url)
 	return buildRequest(url)
 }
 
@@ -56,7 +60,8 @@ func buildRequest(url string) *http.Request {
 }
 
 func doRequest(req *http.Request) *http.Response {
-	client := &http.Client{Timeout: time.Second * time.Duration(Config.TIME_OUT)}
+	client := &http.Client{Timeout: time.Second * time.Duration(Config.CLIENT_TIME_OUT)}
+	Config.API_RATE_LIMITER.Consume(1) // This statement blocks if there are no more available requests
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Fatal("Do: ", err)
@@ -86,4 +91,5 @@ func initConfig(configFilename string) {
 
 func init() {
 	initConfig("./config.json")
+	Config.API_RATE_LIMITER = tokenbucket.TokenBucket(1000, 3600)
 }
