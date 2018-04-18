@@ -1,5 +1,7 @@
 package USDAAPIWrapper
 
+import "encoding/json"
+
 // Food Search Types
 
 type FoodSearch struct {
@@ -36,15 +38,20 @@ type FoodReport struct {
 }
 
 type Food struct {
-	StandardRelease string `json:"sr"`
-	Type            string
-	Description     []FoodDesc `json:"desc"`
-	Nutrients       []Nutrient
+	Food Data `json:"food"`
+}
+
+type Data struct {
+	StandardRelease string     `json:"sr"`
+	Type            string     `json:"type"`
+	Description     FoodDesc   `json:"desc"`
+	Nutrients       []Nutrient `json:"nutrients"`
 }
 
 type FoodDesc struct {
-	NDBNO              string
-	Name               string
+	NDBNO              string `json:ndbno`
+	Name               string `json:"name"`
+	DataSource         string `json:"ds"`
 	ShortDescription   string `json:"sd"`
 	FoodGroup          string `json:"fg"`
 	ScientificName     string `json:"sn"`
@@ -61,20 +68,20 @@ type FoodDesc struct {
 }
 
 type Nutrient struct {
-	NutrientID    int `json:"nutrient_id"`
-	Name          string
-	Group         string
-	Unit          string
-	Value         float32
-	Derivation    string
-	DataPoints    int    `json:"dp"`
-	StandardError string `json:"se"`
+	NutrientID    string      `json:"nutrient_id"`
+	Name          string      `json:"name"`
+	Group         string      `json:"group"`
+	Unit          string      `json:"unit"`
+	Value         string      `json:"value"`
+	Derivation    string      `json:"derivation"`
+	DataPoints    json.Number `json:"dp"`
+	StandardError string      `json:"se"`
 }
 
 type Measure struct {
-	Label      string
+	Label      string  `json:"label"`
 	Equivalent float32 `json:"eqv"`
 	Eunit      string  `json:"eunit"`
 	Quantity   int     `json:"qty"`
-	Value      float32
+	Value      string  `json:"value"`
 }

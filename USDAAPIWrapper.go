@@ -23,32 +23,32 @@ var Config struct {
 
 func SearchFood(query, dataSource,
 	foodGroupID, sort, max, offset string) *FoodSearch {
-	response := doRequest(buildSearchRequest(query, dataSource,
-		foodGroupID, sort, max, offset))
+	response := doRequest(buildRequest(buildSearchURL(query, dataSource,
+		foodGroupID, sort, max, offset)))
 	search := new(FoodSearch)
-	formatSearchResponse(response, search)
+	formatResponse(response, search)
 	return search
 }
 
 func GetFoodReport(query, reportType string) *FoodReport {
-	response := doRequest(buildReportRequest(query, reportType))
+	response := doRequest(buildRequest(buildReportURL(query, reportType)))
 	report := new(FoodReport)
-	formatSearchResponse(response, report)
+	formatResponse(response, report)
 	return report
 }
 
-func buildReportRequest(ndbno, reportType string) *http.Request {
+func buildReportURL(ndbno, reportType string) string {
 	url := fmt.Sprintf("https://api.nal.usda.gov/ndb/V2/reports?ndbno=%s&type=%s&format=json&api_key=%s",
 		ndbno, reportType, Config.API_KEY)
-	return buildRequest(url)
+	return url
 }
 
-func buildSearchRequest(query, dataSource,
-	foodGroupID, sort, max, offset string) *http.Request {
+func buildSearchURL(query, dataSource, // escape the arguments
+	foodGroupID, sort, max, offset string) string {
 	safeQuery := url.QueryEscape(query)
 	url := fmt.Sprintf("http://api.nal.usda.gov/ndb/search/?format=json&q=%s&ds=%s&fg=%s&sort=%s&max=%s&offset=%s&api_key=%s",
 		safeQuery, dataSource, foodGroupID, sort, max, offset, Config.API_KEY)
-	return buildRequest(url)
+	return url
 }
 
 func buildRequest(url string) *http.Request {
@@ -69,7 +69,7 @@ func doRequest(req *http.Request) *http.Response {
 	return resp
 }
 
-func formatSearchResponse(resp *http.Response, record interface{}) {
+func formatResponse(resp *http.Response, record interface{}) {
 	defer resp.Body.Close()
 	if err := json.NewDecoder(resp.Body).Decode(record); err != nil {
 		panic(err)
